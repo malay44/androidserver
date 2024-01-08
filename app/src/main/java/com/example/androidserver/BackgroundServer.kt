@@ -49,19 +49,6 @@ class BackgroundServer : Service() {
         super.onDestroy()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
-        val notification: Notification = NotificationCompat.Builder(this, "CHANNEL_ID")
-            .setContentTitle("Foreground Service")
-            .setContentText("Server is running in the background")
-            .setSmallIcon(R.drawable.ic_launcher_background)
-            .build()
-
-        startForeground(1, notification)
-
-        return Service.START_NOT_STICKY
-    }
-
     private fun createNotificationChannel(context: Context) {
         val channel = NotificationChannel(
             "CHANNEL_ID",
@@ -98,7 +85,13 @@ class BackgroundServer : Service() {
 
             mHttpServer!!.start()
 
-            return "${getLocalIpAddress()}:${port}"
+            val notification: Notification = NotificationCompat.Builder(this, "CHANNEL_ID")
+                .setContentTitle("Foreground Service")
+                .setContentText("Server is on http://${getLocalIpAddress()}:${port}")
+                .setSmallIcon(R.drawable.round_web_24)
+                .build()
+
+            startForeground(1, notification)
 
         } catch (e: IOException) {
             e.printStackTrace()
@@ -109,7 +102,7 @@ class BackgroundServer : Service() {
     private fun getLocalIpAddress(): String {
         try {
             val networkInterfaces = Collections.list(NetworkInterface.getNetworkInterfaces())
-            Log.d("NetworkInterfaces", networkInterfaces.toString());
+            Log.d("NetworkInterfaces", networkInterfaces.toString())
             for (networkInterface in networkInterfaces) {
                 val inetAddresses = Collections.list(networkInterface.inetAddresses)
 
@@ -138,11 +131,11 @@ class BackgroundServer : Service() {
                     val uri = exchange.requestURI.toString()
                     if (uri.endsWith(".js") || uri.endsWith(".css") || uri.endsWith(".svg")) {
                         val content = readAssetFile("build$uri")
-                        val contentType = determineContentType("build$uri");
-                        sendResponse(exchange, content, contentType);
+                        val contentType = determineContentType("build$uri")
+                        sendResponse(exchange, content, contentType)
                     } else {
                         val content = readAssetFile("build/index.html")
-                        sendResponse(exchange, content, "text/html");
+                        sendResponse(exchange, content, "text/html")
                     }
                 }
             }
@@ -177,7 +170,11 @@ class BackgroundServer : Service() {
         }
     }
 
-    private fun sendResponse(httpExchange: HttpExchange, responseText: String, contentType: String) {
+    private fun sendResponse(
+        httpExchange: HttpExchange,
+        responseText: String,
+        contentType: String
+    ) {
         httpExchange.responseHeaders.set("Content-Type", contentType)
         httpExchange.sendResponseHeaders(200, responseText.length.toLong())
         val os = httpExchange.responseBody
